@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create Managed IAM UserGroup
+Resources:
+  AdminAccessUserGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: AdminAccess
+      ManagedPolicyArns:
+        - "arn:aws-cn:iam::aws:policy/AdministratorAccess"
+  PowerUserUserGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: PowUserAccess
+      ManagedPolicyArns:
+        - "arn:aws-cn:iam::aws:policy/PowerUserAccess"
+  ReadOnlyUserGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: ReadOnlyAccess
+      ManagedPolicyArns:
+        - "arn:aws-cn:iam::aws:policy/ReadOnlyAccess"
+Outputs:
+  AdminAccessUserGroup:
+    Value: !Ref AdminAccessUserGroup
+    Description: Admin User Group Name
+  PowerUserUserGroup:
+    Value: !Ref PowerUserUserGroup
+    Description: PowerUser User Group Name
+  ReadOnlyUserGroup:
+    Value: !Ref ReadOnlyUserGroup
+    Description: ReadOnly User Group Name

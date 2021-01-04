@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create CI/CD fundation resource
+Parameters:
+  VpcId:
+    Type: String
+  CodeBuildSubnet:
+    Type: String
+  SecurityGroupIds:
+    Type: String
+Resources:
+  DemoAPPCodeCommitRepo:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryDescription: "A Code Repo for Demo APP"
+      RepositoryName: DemoAPPCodeRepo
+      Code:
+        S3:
+          Bucket: demo-artifact
+          Key: README.md.zip
+      Tags:
+        - Key: Name
+          Value: CodeCommit Init
+        - Key: Cost
+          Value: Project-1
+  DemoAppCodeArtifact:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: demoappcode
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Name
+          Value: DemoApp Code
+        - Key: Cost
+          Value: Project-1
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Action:
+            - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+              - codebuild.amazonaws.com
+      Path: /
+      ManagedPolicyArns:
+        - 'arn:aws-cn:iam::aws:policy/AWSCodeBuildAdminAccess'
+  DemoAppCodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Location: !Ref DemoAppCodeArtifact
+        ArtifactIdentifier: DemoApp
+        Name: DemoAppCodeBuild
+        Packaging: ZIP
+        Type: S3
+        Path: "/DemoAPP"
+      Description: "A CodeBuild for DemoApp"
+      Environment:
+        ComputeType: "BUILD_GENERAL1_MEDIUM"
+        Image: "aws/codebuild/standard:latest"
+        ImagePullCredentialsType: SERVICE_ROLE
+        Type: LINUX_CONTAINER
+      LogsConfig:
+        CloudWatchLogs:
+          GroupName: "DemoAppCodeBuild"
+          Status: ENABLED
+          StreamName: "DemoAppCodeBuild"
+      Name: DemoAppCodeBuild
+      ServiceRole: !Ref CodeBuildRole
+      Source:
+        Location: !GetAtt DemoAPPCodeCommitRepo.Name
+        SourceIdentifier: "DemoApp"
+        Type: CODECOMMIT
+      Tags:
+        - Key: Name
+          Value: DemoApp Code
+        - Key: Cost
+          Value: Project-1
+      TimeoutInMinutes: 10
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref SecurityGroupIds
+        Subnets:
+          - !Ref CodeBuildSubnet
+        VpcId: !Ref VpcId
+Outputs:
+  DemoAPPCodeCommitRepo:
+    Value: !Ref DemoAPPCodeCommitRepo
+    Description: DemoAPP Code Repo

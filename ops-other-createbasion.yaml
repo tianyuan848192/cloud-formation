@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create VPC Resource
+Parameters:
+  BasionHostAMI:
+    Type: String
+  BasionHostInstanceType:
+    Type: String
+  KeyName:
+    Type: String
+    Default: tianyuan-global.pem
+  DMZSubnet1:
+    Type: String
+  BasionHostSG:
+    Type: String
+  TagName:
+    Type: String
+Resources:
+  CreateBasionInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: !Ref BasionHostAMI
+      InstanceInitiatedShutdownBehavior: stop
+      InstanceType: !Ref BasionHostInstanceType
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !Ref BasionHostSG
+      SubnetId: !Ref DMZSubnet1
+      BlockDeviceMappings:
+        - DeviceName: /dev/sdm
+          Ebs:
+            VolumeType: gp2
+            DeleteOnTermination: 'True'
+            VolumeSize: '50'
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref TagName, 'Basion']]
+  BsisionEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref CreateBasionInstance

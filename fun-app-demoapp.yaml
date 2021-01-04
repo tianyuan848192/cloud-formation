@@ -1,0 +1,165 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create Demo APP
+Parameters:
+  InstanceType:
+    Type: String
+    Default: m4.xlarge
+  TagName:
+    Type: String
+    Default: test-app
+  KeyName:
+    Type: String
+    Default: OPS-DEV-TianYuan
+  LaunchTemplateId:
+    Type: String
+  LaunchTemplateVersion:
+    Type: String
+  PrivateSubnet1:
+    Type: String
+  PrivateSubnet2:
+    Type: String
+  AppsName:
+    Type: String
+    Default: Demo
+  DBPassword:
+    Type: String
+  SGDataBase:
+    Type: String
+  DBInstanceClass:
+    Type: String
+    Default: db.r5.large
+  VpcId:
+    Type: String
+  SGWebServer:
+    Type: String
+Resources:
+  CreateDemoAppInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplateId
+        Version: !Ref LaunchTemplateVersion
+      SubnetId: !Ref PrivateSubnet1
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref AppsName, 'WebServer1']]
+  CreateDemoAppInstance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplateId
+        Version: !Ref LaunchTemplateVersion
+      SubnetId: !Ref PrivateSubnet2
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref AppsName, 'WebServer2']]
+  DemoAPPDBClusterParameterGroup:
+    Type: 'AWS::RDS::DBClusterParameterGroup'
+    Properties:
+      Description: "Demo APP DB Cluster Parameter Group"
+      Parameters:
+        character_set_client: utf8
+        character_set_connection: utf8
+        character_set_database: utf8
+        character_set_filesystem: utf8
+        character_set_results: utf8
+        character_set_server: utf8
+        collation_connection: utf8_general_ci
+        collation_server: utf8_general_ci
+      Family: aurora-mysql5.7
+  DemoAppInstanceParameterGroup:
+    Type: 'AWS::RDS::DBParameterGroup'
+    Properties:
+      Description: "Demo APP DB Instance Parameter Group"
+      Parameters: {}
+      Family: aurora-mysql5.7
+  DBSubnetGroup:
+    Description: Create the SubnetGroup for RDS
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties:
+      DBSubnetGroupDescription: RDS Subnet Group
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      Tags:
+        - Key: Name
+          Value: DB Subnet Group
+  DemoAppDataBaseCluster:
+    Type: 'AWS::RDS::DBCluster'
+    Properties:
+      DatabaseName: !Ref AppsName
+      DBClusterIdentifier: !Join ['-', [ 'mysql', !Ref AppsName ]]
+      DBClusterParameterGroupName: !Ref DemoAPPDBClusterParameterGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      Engine: aurora-mysql
+      MasterUsername: admin
+      MasterUserPassword: !Ref DBPassword
+      Port: 3306
+      PreferredBackupWindow: '06:00-07:00'
+      PreferredMaintenanceWindow: 'sun:08:00-sun:09:00'
+      VpcSecurityGroupIds:
+        - !Ref SGDataBase
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [ !Ref AppsName, 'Database' ]]
+  DemoAppDBInstance1:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      DBParameterGroupName: !Ref DemoAppInstanceParameterGroup
+      DBInstanceIdentifier: !Ref AppsName
+      DBClusterIdentifier: !Ref DemoAppDataBaseCluster
+      DBInstanceClass: !Ref DBInstanceClass
+      Engine: aurora-mysql
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [ !Ref AppsName, 'Database' ]]
+  DemoAppALBTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 5
+      Name: !Ref AppsName
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 2
+      VpcId: !Ref VpcId
+      Targets:
+        - Id: !Ref CreateDemoAppInstance1
+          Port: 80
+        - Id: !Ref CreateDemoAppInstance2
+          Port: 80
+      TargetType: instance
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [ !Ref AppsName, 'TragetGroup' ]]
+  DemoAppALB:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: !Ref AppsName
+      Scheme: internal
+      SecurityGroups:
+        - !Ref SGWebServer
+      Subnets:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      Type: application
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [ !Ref AppsName, 'ALB' ]]
+  DemoAppALBListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref DemoAppALBTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref DemoAppALB
+      Port: 80
+      Protocol: HTTP

@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create VPC Resource
+Parameters:
+  Subnet1Cidr:
+    Type: String
+  Subnet2Cidr:
+    Type: String
+  Subnet3Cidr:
+    Type: String
+  Subnet4Cidr:
+    Type: String
+  VpcId:
+    Type: String
+  TagName:
+    Type: String
+Resources:
+  Subnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs
+          Ref: 'AWS::Region'
+      CidrBlock: !Ref Subnet1Cidr
+      Tags:
+        - Key: Name
+          Value: !Join ['-',[!Ref TagName, DMZ1]]
+        - Key: AvailabilityZone
+          Value: !Select
+            - 0
+            - !GetAZs
+              Ref: 'AWS::Region'
+      VpcId: !Ref VpcId
+  Subnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs
+          Ref: 'AWS::Region'
+      CidrBlock: !Ref Subnet2Cidr
+      Tags:
+        - Key: Name
+          Value: !Join ['-',[!Ref TagName, DMZ2]]
+        - Key: AvailabilityZone
+          Value: !Select
+            - 1
+            - !GetAZs
+              Ref: 'AWS::Region'
+      VpcId: !Ref VpcId
+  Subnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs
+          Ref: 'AWS::Region'
+      CidrBlock: !Ref Subnet3Cidr
+      Tags:
+        - Key: Name
+          Value: !Join ['-',[!Ref TagName, Internal1]]
+        - Key: AvailabilityZone
+          Value: !Select
+            - 0
+            - !GetAZs
+              Ref: 'AWS::Region'
+      VpcId: !Ref VpcId
+  Subnet4:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs
+          Ref: 'AWS::Region'
+      CidrBlock: !Ref Subnet4Cidr
+      Tags:
+        - Key: Name
+          Value: !Join ['-',[!Ref TagName, Internal2]]
+        - Key: AvailabilityZone
+          Value: !Select
+            - 1
+            - !GetAZs
+              Ref: 'AWS::Region'
+      VpcId: !Ref VpcId
+Outputs:
+  DMZSubnet1:
+    Value: !Ref Subnet1
+    Description: DMZ Subnet in AZ 1
+  DMZSubnet2:
+    Value: !Ref Subnet2
+    Description: DMZ Subnet in AZ 2
+  PrivateSubnet1:
+    Value: !Ref Subnet3
+    Description: DMZ Subnet in AZ 1
+  PrivateSubnet2:
+    Value: !Ref Subnet4
+    Description: DMZ Subnet in AZ 2

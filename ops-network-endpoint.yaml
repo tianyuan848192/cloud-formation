@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create VPC Resource
+Parameters:
+  VpcId:
+    Type: String
+  PublicRouteTable:
+    Type: String
+  PrivateRouteTableAZ1:
+    Type: String
+  PrivateRouteTableAZ2:
+    Type: String
+Resources:
+  S3EndPoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      VpcId: !Ref VpcId
+      RouteTableIds:
+        - !Ref PublicRouteTable
+        - !Ref PrivateRouteTableAZ1
+        - !Ref PrivateRouteTableAZ2
+      ServiceName: !Join
+        - .
+        - - com.amazonaws
+          - !Ref 'AWS::Region'
+          - s3
+      VpcEndpointType: Gateway
+  DynamoDBEndPoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      VpcId: !Ref VpcId
+      RouteTableIds:
+        - !Ref PublicRouteTable
+        - !Ref PrivateRouteTableAZ1
+        - !Ref PrivateRouteTableAZ2
+      ServiceName: !Join
+        - .
+        - - com.amazonaws
+          - !Ref 'AWS::Region'
+          - dynamodb
+      VpcEndpointType: Gateway

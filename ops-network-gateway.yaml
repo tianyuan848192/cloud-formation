@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create VPC Resource
+Parameters:
+  VpcId:
+    Type: String
+  DMZSubnet1:
+    Type: String
+  DMZSubnet2:
+    Type: String
+  TagName:
+    Type: String
+Resources:
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref TagName, IGW]]
+  NatGateway1EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  NatGateway2EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  NatGateway1:
+    DependsOn: VPCGatewayAttach
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway1EIP.AllocationId
+      SubnetId: !Ref DMZSubnet1
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref TagName, NatGateway1]]
+  NatGateway2:
+    DependsOn: VPCGatewayAttach
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway2EIP.AllocationId
+      SubnetId: !Ref DMZSubnet2
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref TagName, NatGateway2]]
+  VPCGatewayAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VpcId
+Outputs:
+  NatGateway1:
+    Value: !Ref NatGateway1
+    Description: NAT Gateway in AZ 1
+  NatGateway2:
+    Value: !Ref NatGateway2
+    Description: NAT Gateway in AZ 2
+  InternetGateway:
+    Value: !Ref InternetGateway
+    Description: Network IGW

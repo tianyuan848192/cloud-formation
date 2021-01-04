@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create VPC Resource
+Parameters:
+  VpcId:
+    Type: String
+  VpcCidr:
+    Type: String
+Resources:
+  SGInternalLogin:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: SGInternalLogin
+      GroupDescription: Security Group for login server
+      SecurityGroupIngress:
+        - CidrIp: !Ref VpcCidr
+          Description: Linux Server Login
+          FromPort: 22
+          IpProtocol: TCP
+          ToPort: 22
+        - CidrIp: !Ref VpcCidr
+          Description: Windows Server Login
+          FromPort: 3389
+          IpProtocol: TCP
+          ToPort: 3389
+      Tags:
+        - Key: Name
+          Value: SecurityGroup For Internal Login
+      VpcId: !Ref VpcId
+  SGDataBaseLogin:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: SGDatabase
+      GroupDescription: Security Group for login DataBase
+      SecurityGroupIngress:
+        - CidrIp: !Ref VpcCidr
+          Description: MSSQL Login
+          FromPort: 1433
+          IpProtocol: TCP
+          ToPort: 1433
+        - CidrIp: !Ref VpcCidr
+          Description: MYSQL Login
+          FromPort: 3306
+          IpProtocol: TCP
+          ToPort: 3306
+        - CidrIp: !Ref VpcCidr
+          Description: Elastic Cache Redis Login
+          FromPort: 6379
+          IpProtocol: TCP
+          ToPort: 6379
+      Tags:
+        - Key: Name
+          Value: SecurityGroup For Database Login
+      VpcId: !Ref VpcId
+  SGBasion:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: SGBasion
+      GroupDescription: Basion Security Group
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: Basion Linux Server Login
+          FromPort: 22
+          IpProtocol: TCP
+          ToPort: 22
+        - CidrIp: 0.0.0.0/0
+          Description: Basion Windows Server Login
+          FromPort: 3389
+          IpProtocol: TCP
+          ToPort: 3389
+      Tags:
+        - Key: Name
+          Value: Basion SecurityGroup
+      VpcId: !Ref VpcId
+  SGWebServer:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: SGWebServer
+      GroupDescription: Basion Security Group
+      SecurityGroupIngress:
+        - CidrIp: 10.0.0.0/8
+          Description: Application for http 80 port
+          FromPort: 80
+          IpProtocol: TCP
+          ToPort: 80
+        - CidrIp: 10.0.0.0/8
+          Description: Application for http 7000-8000 port
+          FromPort: 7000
+          IpProtocol: TCP
+          ToPort: 8000
+      Tags:
+        - Key: Name
+          Value: Basion SecurityGroup
+      VpcId: !Ref VpcId
+Outputs:
+  SGInternalLogin:
+    Value: !GetAtt SGInternalLogin.GroupId
+    Description: SGInternalLogin Id
+  SGDataBase:
+    Value: !GetAtt SGDataBaseLogin.GroupId
+    Description: SGDataBaseLogin Id
+  SGBasion:
+    Value: !GetAtt SGBasion.GroupId
+    Description: SGBasion Id
+  SGWebServer:
+    Value: !GetAtt SGWebServer.GroupId
+    Description: SGWebServer Id
+
